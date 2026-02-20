@@ -29,6 +29,7 @@ async def login_page(request: Request, error: str = ""):
     return templates.TemplateResponse("auth/login.html", {
         **ctx.to_dict(request),
         "error": error,
+        "allow_registration": get_settings().allow_registration,
     })
 
 
@@ -50,6 +51,7 @@ async def login_submit(
         return templates.TemplateResponse("auth/login.html", {
             **ctx.to_dict(request),
             "error": "Invalid username or password",
+            "allow_registration": get_settings().allow_registration,
         }, status_code=401)
 
 

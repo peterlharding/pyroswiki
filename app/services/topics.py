@@ -116,6 +116,14 @@ async def create_topic(
 
     # Reload with all relations eagerly loaded
     topic, version = await _reload_topic_version(db, topic.id, version.version)
+
+    # Fire plugin hooks (non-blocking — errors are logged, not raised)
+    from app.services.plugins import get_plugin_manager
+    pm = get_plugin_manager()
+    author = await db.get(User, author_id) if author_id else None
+    await pm.after_create(web_name, data.name, version, author)
+    await pm.after_save(web_name, data.name, version, author)
+
     return topic, version
 
 
@@ -183,6 +191,13 @@ async def update_topic(
 
     # Reload with all relations
     topic, new_version = await _reload_topic_version(db, topic.id, new_version.version)
+
+    # Fire plugin hooks
+    from app.services.plugins import get_plugin_manager
+    pm = get_plugin_manager()
+    author = await db.get(User, author_id) if author_id else None
+    await pm.after_save(web_name, topic_name, new_version, author)
+
     return topic, new_version
 
 
@@ -218,10 +233,17 @@ async def delete_topic(
     db: AsyncSession,
     web_name: str,
     topic_name: str,
+    author_id: Optional[str] = None,
 ) -> None:
     web = await get_web_by_name(db, web_name)
     topic = await _get_topic(db, web.id, topic_name)
     await db.delete(topic)
+
+    # Fire plugin hook
+    from app.services.plugins import get_plugin_manager
+    pm = get_plugin_manager()
+    author = await db.get(User, author_id) if author_id else None
+    await pm.after_delete(web_name, topic_name, author)
 
 
 # -----------------------------------------------------------------------------

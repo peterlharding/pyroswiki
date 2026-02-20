@@ -64,6 +64,29 @@ class Settings(BaseSettings):
     admin_email: str = "admin@example.com"
     allow_registration: bool = True   # set False to restrict account creation to admins only
 
+    # ── SMTP / Email ───────────────────────────────────────────────────────
+
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_use_tls: bool = True          # STARTTLS on port 587
+    smtp_use_ssl: bool = False         # Implicit TLS on port 465
+    smtp_from_address: str = ""        # defaults to admin_email if blank
+    smtp_from_name: str = ""           # defaults to site_name if blank
+
+    @property
+    def smtp_enabled(self) -> bool:
+        return bool(self.smtp_host and (self.smtp_from_address or self.admin_email))
+
+    @property
+    def effective_from_address(self) -> str:
+        return self.smtp_from_address or self.admin_email
+
+    @property
+    def effective_from_name(self) -> str:
+        return self.smtp_from_name or self.site_name
+
     # ── CORS ───────────────────────────────────────────────────────────────
 
     cors_origins: list[str] = [

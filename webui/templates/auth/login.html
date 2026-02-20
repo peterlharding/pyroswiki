@@ -18,7 +18,8 @@
       <button type="submit" class="btn btn-primary" style="width:100%;">Sign in</button>
     </form>
     <p style="margin-top:1rem; font-size:.85rem; color:var(--muted); text-align:center;">
-      No account? <a href="/register">Register</a>
+      <a href="/forgot-password">Forgot password?</a>
+      {% if allow_registration %} &nbsp;·&nbsp; No account? <a href="/register">Register</a>{% endif %}
     </p>
   </div>
 </div>

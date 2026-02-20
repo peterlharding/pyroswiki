@@ -303,3 +303,23 @@ class ACL(Base):
         viewonly=True,
         back_populates="acl",
     )
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# password_reset_tokens
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+class PasswordResetToken(Base):
+    """
+    Single-use tokens for the password reset flow.
+    Tokens expire after 1 hour and are deleted on use.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id:         Mapped[str]      = _uuid_col(primary_key=True)
+    user_id:    Mapped[str]      = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token:      Mapped[str]      = mapped_column(String(128), unique=True, nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    user: Mapped["User"] = relationship("User")
