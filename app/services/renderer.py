@@ -258,8 +258,8 @@ class RenderPipeline:
 
     async def _post_render(self, html: str, ctx: MacroContext) -> str:
         if self.plugin_manager and hasattr(self.plugin_manager, "post_render"):
-            return await self.plugin_manager.post_render(html, ctx)
-        return html
+            html = await self.plugin_manager.post_render(html, ctx)
+        return _add_external_link_targets(html)
 
     # -------------------------------------------------------------------------
 
@@ -271,6 +271,35 @@ class RenderPipeline:
         return f"<pre>{html.escape(text)}</pre>"
 
     # -------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+
+_EXTERNAL_LINK_RE = re.compile(
+    r'<a\s+([^>]*?)href=(["\'])(https?://[^"\'>]+)\2([^>]*)>',
+    re.IGNORECASE,
+)
+
+
+def _add_external_link_targets(html: str) -> str:
+    """
+    Rewrite external links in rendered HTML to open in a new tab.
+    Adds target="_blank" rel="noopener noreferrer" to any <a href="http...">.
+    Skips links that already have a target attribute.
+    """
+    def _rewrite(m: re.Match) -> str:
+        before = m.group(1)   # attributes before href
+        quote  = m.group(2)
+        url    = m.group(3)
+        after  = m.group(4)   # attributes after href
+        full   = (before + after).lower()
+        if "target=" in full:
+            return m.group(0)  # already has a target, leave it alone
+        return (
+            f'<a {before}href={quote}{url}{quote}{after} '
+            f'target="_blank" rel="noopener noreferrer">'
+        )
+    return _EXTERNAL_LINK_RE.sub(_rewrite, html)
 
 
 # -----------------------------------------------------------------------------
