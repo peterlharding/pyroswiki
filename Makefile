@@ -138,7 +138,8 @@ bootstrap-admin:
 # -----------------------------------------------------------------------------
 
 install:
-	$(VENV)/bin/pip install -r requirements.txt
+	uv pip install -r requirements.txt
+	# $(VENV)/bin/pip install -r requirements.txt
 
 .PHONY: start-api start-api-bg stop-api logs-api \
         start-web start-web-bg stop-web logs-web \
