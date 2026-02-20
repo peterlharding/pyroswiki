@@ -28,6 +28,53 @@ def _pipeline(db) -> RenderPipeline:
 
 # -----------------------------------------------------------------------------
 
+@router.get("/webs/{web_name}/topics/new", response_class=HTMLResponse)
+async def new_topic_page_first(
+    web_name: str,
+    request: Request,
+):
+    user = await get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    ctx = PageContext(title=f"New Topic in {web_name}", user=user, web=web_name)
+    return templates.TemplateResponse("topics/edit.html", {
+        **ctx.to_dict(request),
+        "web": web_name,
+        "topic": None,
+        "ver": None,
+        "error": "",
+    })
+
+
+@router.post("/webs/{web_name}/topics/new")
+async def new_topic_submit_first(
+    web_name: str,
+    request: Request,
+    name: str = Form(...),
+    content: str = Form(default=""),
+    comment: str = Form(default=""),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    try:
+        data = TopicCreate(name=name, content=content, comment=comment)
+        await topic_svc.create_topic(db, web_name, data, author_id=user["id"])
+        return RedirectResponse(url=f"/webs/{web_name}/topics/{name}", status_code=302)
+    except Exception as e:
+        ctx = PageContext(title=f"New Topic in {web_name}", user=user, web=web_name)
+        return templates.TemplateResponse("topics/edit.html", {
+            **ctx.to_dict(request),
+            "web": web_name,
+            "topic": None,
+            "ver": None,
+            "error": str(e),
+        }, status_code=400)
+
+
+# -----------------------------------------------------------------------------
+
 @router.get("/webs/{web_name}/topics/{topic_name}", response_class=HTMLResponse)
 async def view_topic(
     web_name: str,
@@ -60,53 +107,6 @@ async def view_topic(
             **ctx.to_dict(request),
             "message": str(e),
         }, status_code=404)
-
-
-# -----------------------------------------------------------------------------
-
-@router.get("/webs/{web_name}/topics/new", response_class=HTMLResponse)
-async def new_topic_page(
-    web_name: str,
-    request: Request,
-):
-    user = await get_current_user(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=302)
-    ctx = PageContext(title=f"New Topic in {web_name}", user=user, web=web_name)
-    return templates.TemplateResponse("topics/edit.html", {
-        **ctx.to_dict(request),
-        "web": web_name,
-        "topic": None,
-        "ver": None,
-        "error": "",
-    })
-
-
-@router.post("/webs/{web_name}/topics/new")
-async def new_topic_submit(
-    web_name: str,
-    request: Request,
-    name: str = Form(...),
-    content: str = Form(default=""),
-    comment: str = Form(default=""),
-    db: AsyncSession = Depends(get_db),
-):
-    user = await get_current_user(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=302)
-    try:
-        data = TopicCreate(name=name, content=content, comment=comment)
-        await topic_svc.create_topic(db, web_name, data, author_id=user["id"])
-        return RedirectResponse(url=f"/webs/{web_name}/topics/{name}", status_code=302)
-    except Exception as e:
-        ctx = PageContext(title=f"New Topic in {web_name}", user=user, web=web_name)
-        return templates.TemplateResponse("topics/edit.html", {
-            **ctx.to_dict(request),
-            "web": web_name,
-            "topic": None,
-            "ver": None,
-            "error": str(e),
-        }, status_code=400)
 
 
 # -----------------------------------------------------------------------------

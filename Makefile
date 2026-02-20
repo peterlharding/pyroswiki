@@ -6,7 +6,7 @@
 
 HOST       := 127.0.0.1
 API_PORT   := 8621
-WEB_PORT   := 8121
+WEB_PORT   := 8221
 LOG_LEVEL  := info
 VENV       := .venv
 PYTHON     := $(VENV)/bin/python

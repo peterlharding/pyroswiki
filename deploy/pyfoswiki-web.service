@@ -12,7 +12,7 @@ EnvironmentFile=/opt/pyfoswiki/.env
 ExecStart=/opt/pyfoswiki/.venv/bin/uvicorn \
     webui.app:app \
     --host 127.0.0.1 \
-    --port 8121 \
+    --port 8221 \
     --workers 2 \
     --log-level info \
     --access-log

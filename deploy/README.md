@@ -1,8 +1,8 @@
 # PyFoswiki — Server Deployment
 
 **Domain:** `py-foswiki.performiq.com`
-- Web UI: `https://py-foswiki.performiq.com` → `127.0.0.1:8121`
-- API:    `https://py-foswiki.performiq.com:8443` → `127.0.0.1:8443`
+- Web UI: `https://py-foswiki.performiq.com` → `127.0.0.1:8221`
+- API:    `https://py-foswiki.performiq.com:8443` → `127.0.0.1:8621`
 
 ---
 
