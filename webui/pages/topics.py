@@ -13,6 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.services import topics as topic_svc
 from app.services import attachments as att_svc
+from app.services import acl as acl_svc
+from app.services import webs as web_svc
+from app.services.users import get_user_by_id_or_none
 from app.schemas import TopicCreate, TopicUpdate
 from app.services.renderer import RenderPipeline
 from app.core.config import get_settings
@@ -61,6 +64,14 @@ async def new_topic_submit_first(
     if not user:
         return RedirectResponse(url="/login", status_code=302)
     try:
+        web = await web_svc.get_web_by_name(db, web_name)
+        user_obj = await get_user_by_id_or_none(db, user.get("id"))
+        if not await acl_svc.check_permission(db, "web", web.id, "create", user_obj):
+            ctx = PageContext(title="Forbidden", user=user, web=web_name)
+            return templates.TemplateResponse("error.html", {
+                **ctx.to_dict(request),
+                "message": "You do not have permission to create topics in this web.",
+            }, status_code=403)
         data = TopicCreate(name=name, content=content, comment=comment)
         await topic_svc.create_topic(db, web_name, data, author_id=user["id"])
         return RedirectResponse(url=f"/webs/{web_name}/topics/{name}", status_code=302)
@@ -89,6 +100,15 @@ async def view_topic(
         return RedirectResponse(url="/login", status_code=302)
     try:
         topic, ver = await topic_svc.get_topic(db, web_name, topic_name)
+        web = await web_svc.get_web_by_name(db, web_name)
+        user_obj = await get_user_by_id_or_none(db, user.get("id") if user else None)
+        allowed = await acl_svc.check_topic_permission(db, topic.id, web.id, "view", user_obj)
+        if not allowed:
+            ctx = PageContext(title="Forbidden", user=user)
+            return templates.TemplateResponse("error.html", {
+                **ctx.to_dict(request),
+                "message": "You do not have permission to view this topic.",
+            }, status_code=403)
         if ver.rendered:
             rendered = ver.rendered
         else:
@@ -170,6 +190,15 @@ async def edit_topic_submit(
     if not user:
         return RedirectResponse(url="/login", status_code=302)
     try:
+        topic_obj, _ver = await topic_svc.get_topic(db, web_name, topic_name)
+        web = await web_svc.get_web_by_name(db, web_name)
+        user_obj = await get_user_by_id_or_none(db, user.get("id"))
+        if not await acl_svc.check_topic_permission(db, topic_obj.id, web.id, "edit", user_obj):
+            ctx = PageContext(title="Forbidden", user=user, web=web_name, topic=topic_name)
+            return templates.TemplateResponse("error.html", {
+                **ctx.to_dict(request),
+                "message": "You do not have permission to edit this topic.",
+            }, status_code=403)
         data = TopicUpdate(content=content, comment=comment)
         await topic_svc.update_topic(db, web_name, topic_name, data, author_id=user["id"])
         return RedirectResponse(url=f"/webs/{web_name}/topics/{topic_name}", status_code=302)
@@ -226,6 +255,15 @@ async def delete_topic(
     user = await get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=302)
+    topic_obj, _ver = await topic_svc.get_topic(db, web_name, topic_name)
+    web = await web_svc.get_web_by_name(db, web_name)
+    user_obj = await get_user_by_id_or_none(db, user.get("id"))
+    if not await acl_svc.check_topic_permission(db, topic_obj.id, web.id, "delete", user_obj):
+        ctx = PageContext(title="Forbidden", user=user, web=web_name, topic=topic_name)
+        return templates.TemplateResponse("error.html", {
+            **ctx.to_dict(request),
+            "message": "You do not have permission to delete this topic.",
+        }, status_code=403)
     await topic_svc.delete_topic(db, web_name, topic_name)
     return RedirectResponse(url=f"/webs/{web_name}", status_code=302)
 

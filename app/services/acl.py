@@ -92,6 +92,25 @@ async def set_acl(
 
 # -----------------------------------------------------------------------------
 
+def _eval_entries(
+    entries: list,
+    permission: str,
+    principals: set[str],
+) -> Optional[bool]:
+    """
+    Evaluate a list of ACL entries for a given permission and principal set.
+    Returns True (allow), False (deny), or None (no matching rule).
+    DENY takes precedence over ALLOW.
+    """
+    denies = [e for e in entries if e.permission == permission and e.principal in principals and not e.allow]
+    allows = [e for e in entries if e.permission == permission and e.principal in principals and e.allow]
+    if denies:
+        return False
+    if allows:
+        return True
+    return None
+
+
 async def check_permission(
     db: AsyncSession,
     resource_type: str,
@@ -116,17 +135,68 @@ async def check_permission(
         if user.is_admin:
             return True   # admins bypass ACL
 
-    # Evaluate: first collect matching DENY entries
-    denies  = [e for e in entries if e.permission == permission and e.principal in principals and not e.allow]
-    allows  = [e for e in entries if e.permission == permission and e.principal in principals and e.allow]
-
-    if denies:
-        return False
-    if allows:
-        return True
+    result = _eval_entries(entries, permission, principals)
+    if result is not None:
+        return result
 
     # No explicit rule → default
     return permission in DEFAULT_ALLOW
+
+
+async def check_topic_permission(
+    db: AsyncSession,
+    topic_id: str,
+    web_id: str,
+    permission: str,
+    user: Optional[User] = None,
+) -> bool:
+    """
+    Check permission on a topic, falling back to the web ACL if no topic-level
+    ACL is configured (Foswiki-style inheritance).
+    """
+    if user and user.is_admin:
+        return True
+
+    principals: set[str] = {"*"}
+    if user:
+        principals.add(f"user:{user.username}")
+        for g in user.groups_list():
+            principals.add(f"group:{g}")
+
+    # 1. Check topic-level ACL first
+    topic_entries = await get_acl(db, "topic", topic_id)
+    if topic_entries:
+        result = _eval_entries(topic_entries, permission, principals)
+        if result is not None:
+            return result
+        return permission in DEFAULT_ALLOW
+
+    # 2. Fall back to web-level ACL
+    web_entries = await get_acl(db, "web", web_id)
+    if web_entries:
+        result = _eval_entries(web_entries, permission, principals)
+        if result is not None:
+            return result
+        return permission in DEFAULT_ALLOW
+
+    # 3. No ACL at either level → defaults
+    return permission in DEFAULT_ALLOW
+
+
+async def require_topic_permission(
+    db: AsyncSession,
+    topic_id: str,
+    web_id: str,
+    permission: str,
+    user: Optional[User] = None,
+) -> None:
+    """Raise HTTP 403 if the user lacks *permission* on the topic (with web fallback)."""
+    allowed = await check_topic_permission(db, topic_id, web_id, permission, user)
+    if not allowed:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Permission denied: '{permission}' on this topic",
+        )
 
 
 # -----------------------------------------------------------------------------

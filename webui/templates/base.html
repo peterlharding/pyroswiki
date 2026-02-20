@@ -189,6 +189,12 @@
     <a href="/webs/{{ ctx.web }}/topics/{{ ctx.topic }}/history">🕐 History</a>
     <a href="/webs/{{ ctx.web }}/topics/{{ ctx.topic }}/attachments">📎 Attachments</a>
     <a href="/webs/{{ ctx.web }}/topics/{{ ctx.topic }}/form">📋 DataForm</a>
+    {% if user.is_admin %}
+    <a href="/webs/{{ ctx.web }}/topics/{{ ctx.topic }}/acl">🔒 Topic ACL</a>
+    {% endif %}
+    {% endif %}
+    {% if user.is_admin %}
+    <a href="/webs/{{ ctx.web }}/acl">🔒 Web ACL</a>
     {% endif %}
     {% endif %}
 

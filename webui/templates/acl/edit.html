@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="/">Webs</a>
+  {% if ctx.web %} / <a href="/webs/{{ ctx.web }}">{{ ctx.web }}</a>{% endif %}
+  {% if ctx.topic %} / <a href="/webs/{{ ctx.web }}/topics/{{ ctx.topic }}">{{ ctx.topic }}</a>{% endif %}
+  / ACL
+</div>
+<div class="page-header">
+  <h1>🔒 Access Control — {{ resource_label }}</h1>
+  <a href="{{ cancel_url }}" class="btn btn-secondary btn-sm">Cancel</a>
+</div>
+
+{% if error %}
+<div class="flash error">{{ error }}</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:1rem;">
+  <p style="color:var(--muted); font-size:.9rem; margin:0 0 .5rem;">
+    <strong>How ACLs work:</strong>
+    DENY rules take precedence over ALLOW rules.
+    If no ACL is set, the defaults apply: <em>view</em> is public, everything else requires explicit grant.
+    Topics inherit the web ACL if no topic-level ACL is configured.
+  </p>
+  <p style="color:var(--muted); font-size:.9rem; margin:0;">
+    <strong>Principals:</strong>
+    <code>user:username</code> — specific user &nbsp;|&nbsp;
+    <code>group:groupname</code> — group members &nbsp;|&nbsp;
+    <code>*</code> — everyone (including anonymous)
+  </p>
+</div>
+
+<div class="card" style="padding:0;">
+  <div style="padding:.75rem 1rem; border-bottom:1px solid var(--border); display:flex; align-items:center;">
+    <h2 style="font-size:1rem; flex:1; margin:0;">ACL Entries</h2>
+    <button type="button" class="btn btn-primary btn-sm" onclick="addRow()">+ Add Rule</button>
+  </div>
+  <table id="acl-table" style="margin:0;">
+    <thead>
+      <tr>
+        <th style="width:35%;">Principal</th>
+        <th style="width:25%;">Permission</th>
+        <th style="width:20%;">Effect</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="acl-rows">
+      {% for e in entries %}
+      <tr>
+        <td><input type="text" class="acl-principal" value="{{ e.principal }}"
+                   placeholder="user:jdoe / group:Dev / *"
+                   style="width:100%;"></td>
+        <td>
+          <select class="acl-permission" style="width:100%;">
+            {% for p in ['view','edit','create','rename','delete','admin'] %}
+            <option value="{{ p }}" {% if e.permission == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td>
+          <select class="acl-allow" style="width:100%;">
+            <option value="true"  {% if e.allow %}selected{% endif %}>ALLOW</option>
+            <option value="false" {% if not e.allow %}selected{% endif %}>DENY</option>
+          </select>
+        </td>
+        <td style="text-align:right;">
+          <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">✕</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not entries %}
+  <div id="empty-msg" style="padding:1rem; color:var(--muted); font-size:.9rem; text-align:center;">
+    No rules — defaults apply (view: public, edit/create/delete: denied).
+  </div>
+  {% endif %}
+</div>
+
+<form id="acl-form" method="post" action="{{ save_url }}" style="margin-top:1rem;">
+  <input type="hidden" name="entries_json" id="entries-json">
+  <div style="display:flex; gap:.75rem;">
+    <button type="button" class="btn btn-primary" onclick="submitACL()">Save ACL</button>
+    <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel</a>
+    {% if entries %}
+    <button type="button" class="btn btn-danger" style="margin-left:auto;"
+            onclick="if(confirm('Clear all ACL rules and restore defaults?')) clearAll()">
+      Clear All Rules
+    </button>
+    {% endif %}
+  </div>
+</form>
+
+<script>
+const PERMISSIONS = ['view','edit','create','rename','delete','admin'];
+
+function makeRow(principal, permission, allow) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="acl-principal" value="${principal}"
+               placeholder="user:jdoe / group:Dev / *" style="width:100%;"></td>
+    <td><select class="acl-permission" style="width:100%;">
+      ${PERMISSIONS.map(p => `<option value="${p}" ${p===permission?'selected':''}>${p}</option>`).join('')}
+    </select></td>
+    <td><select class="acl-allow" style="width:100%;">
+      <option value="true"  ${allow!==false?'selected':''}>ALLOW</option>
+      <option value="false" ${allow===false?'selected':''}>DENY</option>
+    </select></td>
+    <td style="text-align:right;">
+      <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">✕</button>
+    </td>`;
+  return tr;
+}
+
+function addRow() {
+  document.getElementById('empty-msg') && (document.getElementById('empty-msg').style.display = 'none');
+  document.getElementById('acl-rows').appendChild(makeRow('', 'view', true));
+}
+
+function removeRow(btn) {
+  btn.closest('tr').remove();
+}
+
+function clearAll() {
+  document.getElementById('acl-rows').innerHTML = '';
+  document.getElementById('entries-json').value = '[]';
+  document.getElementById('acl-form').submit();
+}
+
+function submitACL() {
+  const rows = document.querySelectorAll('#acl-rows tr');
+  const entries = [];
+  for (const row of rows) {
+    const principal  = row.querySelector('.acl-principal').value.trim();
+    const permission = row.querySelector('.acl-permission').value;
+    const allow      = row.querySelector('.acl-allow').value === 'true';
+    if (principal) entries.push({principal, permission, allow});
+  }
+  document.getElementById('entries-json').value = JSON.stringify(entries);
+  document.getElementById('acl-form').submit();
+}
+</script>
+{% endblock %}

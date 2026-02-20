@@ -37,7 +37,7 @@ from app.schemas import (
 from app.services import acl as acl_svc
 from app.services import topics as topic_svc
 from app.services import webs as web_svc
-from app.services.users import get_user_by_id
+from app.services.users import get_user_by_id, get_user_by_id_or_none
 from app.services.renderer import RenderPipeline
 from app.core.config import get_settings
 
@@ -76,8 +76,10 @@ async def create_topic(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    topic, ver = await topic_svc.create_topic(db, web_name, data, author_id=user_id)
+    web = await web_svc.get_web_by_name(db, web_name)
     user = await get_user_by_id(db, user_id)
+    await acl_svc.require_permission(db, "web", web.id, "create", user)
+    topic, ver = await topic_svc.create_topic(db, web_name, data, author_id=user_id)
     pipeline = _get_pipeline(db)
     rendered = await pipeline.render(web_name, topic.name, ver.content, current_user=user.to_dict())
     return await _topic_response(db, web_name, topic, ver, rendered)
@@ -95,22 +97,21 @@ async def get_topic(
     db: AsyncSession = Depends(get_db),
 ):
     topic, ver = await topic_svc.get_topic(db, web_name, topic_name, version=version)
+    web = await web_svc.get_web_by_name(db, web_name)
+    user = await get_user_by_id_or_none(db, user_id)
+    await acl_svc.require_topic_permission(db, topic.id, web.id, "view", user)
 
-    current_user = None
-    if user_id:
-        u = await get_user_by_id(db, user_id)
-        current_user = u.to_dict()
+    current_user = user.to_dict() if user else None
 
     rendered = None
     if render:
-        # Use cached rendered HTML if available and no specific version requested
         if ver.rendered and version is None:
             rendered = ver.rendered
         else:
             pipeline = _get_pipeline(db)
             rendered = await pipeline.render(web_name, topic_name, ver.content, current_user=current_user)
             if version is None:
-                ver.rendered = rendered   # cache it
+                ver.rendered = rendered
 
     return await _topic_response(db, web_name, topic, ver, rendered)
 
@@ -120,10 +121,14 @@ async def get_topic_raw(
     web_name: str,
     topic_name: str,
     version: Optional[int] = Query(None, ge=1),
+    user_id: Optional[str] = Depends(get_optional_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """Return raw TML/Markdown source as plain text."""
-    _topic, ver = await topic_svc.get_topic(db, web_name, topic_name, version=version)
+    topic, ver = await topic_svc.get_topic(db, web_name, topic_name, version=version)
+    web = await web_svc.get_web_by_name(db, web_name)
+    user = await get_user_by_id_or_none(db, user_id)
+    await acl_svc.require_topic_permission(db, topic.id, web.id, "view", user)
     return Response(content=ver.content, media_type="text/plain")
 
 
@@ -169,8 +174,11 @@ async def update_topic(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    topic, ver = await topic_svc.update_topic(db, web_name, topic_name, data, author_id=user_id)
+    topic_obj, _ver = await topic_svc.get_topic(db, web_name, topic_name)
+    web = await web_svc.get_web_by_name(db, web_name)
     user = await get_user_by_id(db, user_id)
+    await acl_svc.require_topic_permission(db, topic_obj.id, web.id, "edit", user)
+    topic, ver = await topic_svc.update_topic(db, web_name, topic_name, data, author_id=user_id)
     pipeline = _get_pipeline(db)
     rendered = await pipeline.render(web_name, topic_name, ver.content, current_user=user.to_dict())
     ver.rendered = rendered
@@ -187,6 +195,10 @@ async def rename_topic(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    topic_obj, _ver = await topic_svc.get_topic(db, web_name, topic_name)
+    web = await web_svc.get_web_by_name(db, web_name)
+    user = await get_user_by_id(db, user_id)
+    await acl_svc.require_topic_permission(db, topic_obj.id, web.id, "rename", user)
     await topic_svc.rename_topic(db, web_name, topic_name, data, author_id=user_id)
     return OKResponse(message=f"Topic renamed to '{data.new_name}'")
 
@@ -200,6 +212,10 @@ async def delete_topic(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
+    topic_obj, _ver = await topic_svc.get_topic(db, web_name, topic_name)
+    web = await web_svc.get_web_by_name(db, web_name)
+    user = await get_user_by_id(db, user_id)
+    await acl_svc.require_topic_permission(db, topic_obj.id, web.id, "delete", user)
     await topic_svc.delete_topic(db, web_name, topic_name)
     return OKResponse(message=f"Topic '{topic_name}' deleted")
 

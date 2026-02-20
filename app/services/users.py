@@ -68,6 +68,13 @@ async def get_user_by_id(db: AsyncSession, user_id: str) -> User:
     return user
 
 
+async def get_user_by_id_or_none(db: AsyncSession, user_id: str | None) -> User | None:
+    """Return User or None — for optional-auth routes."""
+    if not user_id:
+        return None
+    return await db.get(User, user_id)
+
+
 # -----------------------------------------------------------------------------
 
 async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
