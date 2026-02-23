@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -----------------------------------------------------------------------------
 """
-PyFoswiki Web UI — standalone FastAPI app.
+Pyroswiki Web UI — standalone FastAPI app.
 
 Run:
     uvicorn webui.app:app --host 127.0.0.1 --port 8001 --reload

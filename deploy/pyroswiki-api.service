@@ -1,15 +1,15 @@
 [Unit]
-Description=PyFoswiki API (FastAPI/uvicorn)
+Description=Pyroswiki API (FastAPI/uvicorn)
 After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
 Type=simple
-User=pyfoswiki
-Group=pyfoswiki
-WorkingDirectory=/opt/pyfoswiki
-EnvironmentFile=/opt/pyfoswiki/.env
-ExecStart=/opt/pyfoswiki/.venv/bin/uvicorn \
+User=pyroswiki
+Group=pyroswiki
+WorkingDirectory=/opt/pyroswiki
+EnvironmentFile=/opt/pyroswiki/.env
+ExecStart=/opt/pyroswiki/.venv/bin/uvicorn \
     app.main:app \
     --host 127.0.0.1 \
     --port 8621 \
@@ -20,7 +20,7 @@ Restart=on-failure
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=pyfoswiki-api
+SyslogIdentifier=pyroswiki-api
 
 [Install]
 WantedBy=multi-user.target

@@ -28,7 +28,7 @@ async def home(request: Request, db: AsyncSession = Depends(get_db)):
     if not user:
         return RedirectResponse(url="/login", status_code=302)
     webs = await web_svc.list_webs(db)
-    ctx = PageContext(title="PyFoswiki", user=user)
+    ctx = PageContext(title="Pyroswiki", user=user)
     return templates.TemplateResponse("webs/list.html", {
         **ctx.to_dict(request),
         "webs": webs,

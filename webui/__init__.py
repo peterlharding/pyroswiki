@@ -1,3 +1,3 @@
 """
-PyFoswiki Web UI — server-side Jinja2 frontend.
+Pyroswiki Web UI — server-side Jinja2 frontend.
 """

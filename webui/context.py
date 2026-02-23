@@ -12,7 +12,7 @@ from typing import Optional
 
 @dataclass
 class PageContext:
-    title: str = "PyFoswiki"
+    title: str = "Pyroswiki"
     user: Optional[dict] = None          # populated from session
     flash: Optional[str] = None          # one-shot status message
     flash_type: str = "info"             # info | success | error | warning

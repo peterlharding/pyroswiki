@@ -1,6 +1,6 @@
 
 # -----------------------------------------------------------------------------
-# PyFoswiki — top-level Makefile
+# Pyroswiki — top-level Makefile
 # Run targets from WSL:  make run   /   make start   /   make stop
 # -----------------------------------------------------------------------------
 
@@ -11,10 +11,10 @@ LOG_LEVEL  := info
 VENV       := .venv
 PYTHON     := $(VENV)/bin/python
 UVICORN    := $(VENV)/bin/uvicorn
-API_LOG    := /tmp/pyfoswiki-api.log
-WEB_LOG    := /tmp/pyfoswiki-web.log
-API_PID    := /tmp/pyfoswiki-api.pid
-WEB_PID    := /tmp/pyfoswiki-web.pid
+API_LOG    := /tmp/pyroswiki-api.log
+WEB_LOG    := /tmp/pyroswiki-web.log
+API_PID    := /tmp/pyroswiki-api.pid
+WEB_PID    := /tmp/pyroswiki-web.pid
 
 
 # -----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ revoke-admin:
 
 bootstrap-admin:
 	@test -n "$(user)" || (echo "Usage: make bootstrap-admin user=<username>"; exit 1)
-	@psql -h 127.0.0.1 -p 5432 -U pyfoswiki -d pyfoswiki \
+	psql -h 127.0.0.1 -p 5432 -U pyroswiki -d pyroswiki \
 		-c "UPDATE users SET is_admin = TRUE WHERE username = '$(user)';" \
 		-c "SELECT username, is_admin FROM users WHERE username = '$(user)';"
 

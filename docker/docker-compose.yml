@@ -5,15 +5,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: pyfoswiki
-      POSTGRES_PASSWORD: pyfoswiki
-      POSTGRES_DB: pyfoswiki
+      POSTGRES_USER: pyroswiki
+      POSTGRES_PASSWORD: pyroswiki
+      POSTGRES_DB: pyroswiki
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pyfoswiki"]
+      test: ["CMD-SHELL", "pg_isready -U pyroswiki"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -25,7 +25,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://pyfoswiki:pyfoswiki@db:5432/pyfoswiki
+      DATABASE_URL: postgresql+asyncpg://pyroswiki:pyroswiki@db:5432/pyroswiki
       SECRET_KEY: "CHANGE-ME-IN-PRODUCTION"
       DEBUG: "false"
       BASE_URL: "http://localhost:8000"

@@ -1,0 +1,26 @@
+[Unit]
+Description=Pyroswiki Web UI (FastAPI/uvicorn)
+After=network.target pyroswiki-api.service
+Wants=pyroswiki-api.service
+
+[Service]
+Type=simple
+User=pyroswiki
+Group=pyroswiki
+WorkingDirectory=/opt/pyroswiki
+EnvironmentFile=/opt/pyroswiki/.env
+ExecStart=/opt/pyroswiki/.venv/bin/uvicorn \
+    webui.app:app \
+    --host 127.0.0.1 \
+    --port 8221 \
+    --workers 2 \
+    --log-level info \
+    --access-log
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=pyroswiki-web
+
+[Install]
+WantedBy=multi-user.target

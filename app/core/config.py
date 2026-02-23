@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # ── Application ────────────────────────────────────────────────────────
 
-    app_name: str = "PyFoswiki"
+    app_name: str = "Pyroswiki"
     app_version: str = "0.5.0"
     base_url: str = "http://localhost:8621"
     debug: bool = False
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # ── Database ───────────────────────────────────────────────────────────
 
-    database_url: str = "postgresql+asyncpg://pyfoswiki:pyfoswiki@localhost:5432/pyfoswiki"
+    database_url: str = "postgresql+asyncpg://pyroswiki:pyroswiki@localhost:5432/pyroswiki"
     # For tests, override to: "sqlite+aiosqlite:///./test.db"
     db_pool_size: int = 10
     db_max_overflow: int = 20
@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     # ── Wiki defaults ──────────────────────────────────────────────────────
 
     default_web: str = "Main"
-    site_name: str = "PyFoswiki"
+    site_name: str = "Pyroswiki"
     admin_email: str = "admin@example.com"
     allow_registration: bool = True   # set False to restrict account creation to admins only
 
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8121",
-        "https://py-foswiki.performiq.com",
+        "https://pyroswiki.performiq.com",
     ]
 
     @property
