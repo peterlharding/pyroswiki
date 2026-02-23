@@ -91,11 +91,13 @@ class RenderPipeline:
     def __init__(
         self,
         base_url: str = "",
+        pub_base_url: str = "",
         db: Any = None,
         search_service: Any = None,
         plugin_manager: Any = None,
     ) -> None:
         self.base_url = base_url
+        self.pub_base_url = pub_base_url
         self.db = db
         self.search_service = search_service
         self.plugin_manager = plugin_manager
@@ -174,6 +176,7 @@ class RenderPipeline:
             topic=topic,
             topic_id=topic_id,
             base_url=self.base_url,
+            pub_base_url=self.pub_base_url or self.base_url,
             current_user=current_user,
             db=self.db,
             search_service=self.search_service,

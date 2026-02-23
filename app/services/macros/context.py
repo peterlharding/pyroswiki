@@ -43,6 +43,7 @@ class MacroContext:
     topic: str = "WebHome"
     topic_id: Optional[UUID] = None
     base_url: str = ""
+    pub_base_url: str = ""   # Web UI base for /pub links; falls back to base_url
     current_user: Optional[dict] = None
     db: Any = None
     search_service: Any = None

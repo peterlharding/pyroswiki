@@ -152,6 +152,24 @@ async def update_attachment_comment(
     )
 
 
+# ── Foswiki-compatible /pub URL ───────────────────────────────────────────────
+
+@router.get("/pub/{web_name}/{topic_name}/{filename}")
+async def pub_attachment(
+    web_name: str,
+    topic_name: str,
+    filename: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Serve attachments at /pub/{web}/{topic}/{filename} — Foswiki-compatible URL."""
+    attachment, full_path = await att_svc.get_attachment(db, web_name, topic_name, filename)
+    return FileResponse(
+        path=str(full_path),
+        filename=attachment.filename,
+        media_type=attachment.content_type,
+    )
+
+
 # ── Delete ────────────────────────────────────────────────────────────────────
 
 @router.post("/webs/{web_name}/topics/{topic_name}/attachments/{filename}/delete")

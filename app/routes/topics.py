@@ -52,7 +52,12 @@ router = APIRouter(prefix="/webs/{web_name}/topics", tags=["topics"])
 def _get_pipeline(db) -> RenderPipeline:
     settings = get_settings()
     from app.services.plugins import get_plugin_manager
-    return RenderPipeline(base_url=settings.base_url, db=db, plugin_manager=get_plugin_manager())
+    return RenderPipeline(
+        base_url=settings.base_url,
+        pub_base_url=settings.pub_base_url,
+        db=db,
+        plugin_manager=get_plugin_manager(),
+    )
 
 
 # ── List ─────────────────────────────────────────────────────────────────────

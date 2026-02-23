@@ -88,11 +88,13 @@ def register(registry: MacroRegistry) -> None:
 
     @registry.register("PUBURL")
     def puburl_macro(params, ctx):
-        return f"{ctx.base_url}/pub"
+        pub = ctx.pub_base_url or ctx.base_url
+        return f"{pub}/pub"
 
     @registry.register("ATTACHURL")
     def attachurl_macro(params, ctx):
-        return f"{ctx.base_url}/pub/{ctx.web}/{ctx.topic}"
+        pub = ctx.pub_base_url or ctx.base_url
+        return f"{pub}/pub/{ctx.web}/{ctx.topic}"
 
     @registry.register("WIKILOGOURL")
     def wikilogourl_macro(params, ctx):

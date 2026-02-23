@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     app_name: str = "Pyroswiki"
     app_version: str = "0.5.0"
     base_url: str = "http://localhost:8621"
+    web_base_url: str = ""   # Web UI URL for pub/attachment links; defaults to base_url if blank
     debug: bool = False
     environment: Literal["development", "testing", "production"] = "development"
 
@@ -95,6 +96,11 @@ class Settings(BaseSettings):
         "http://localhost:8121",
         "https://pyroswiki.performiq.com",
     ]
+
+    @property
+    def pub_base_url(self) -> str:
+        """Base URL for /pub attachment links — web UI URL, not API URL."""
+        return (self.web_base_url or self.base_url).rstrip("/")
 
     @property
     def is_testing(self) -> bool:
