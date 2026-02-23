@@ -38,7 +38,7 @@ from app.services import acl as acl_svc
 from app.services import topics as topic_svc
 from app.services import webs as web_svc
 from app.services.users import get_user_by_id, get_user_by_id_or_none
-from app.services.renderer import RenderPipeline
+from app.services.renderer import RenderPipeline, _has_user_macros
 from app.core.config import get_settings
 
 
@@ -111,12 +111,13 @@ async def get_topic(
 
     rendered = None
     if render:
-        if ver.rendered and version is None:
+        cacheable = version is None and not _has_user_macros(ver.content)
+        if ver.rendered and cacheable:
             rendered = ver.rendered
         else:
             pipeline = _get_pipeline(db)
             rendered = await pipeline.render(web_name, topic_name, ver.content, current_user=current_user)
-            if version is None:
+            if cacheable:
                 ver.rendered = rendered
 
     return await _topic_response(db, web_name, topic, ver, rendered)

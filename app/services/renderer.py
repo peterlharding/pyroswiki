@@ -285,19 +285,37 @@ class RenderPipeline:
 # We only convert inline spans that are surrounded by word boundaries / spaces.
 # -----------------------------------------------------------------------------
 
-_TML_BOLD_RE   = re.compile(r'(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)')
-_TML_ITALIC_RE = re.compile(r'(?<!_)_(?!\s)(.+?)(?<!\s)_(?!_)')
+_TML_BOLD_RE        = re.compile(r'(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)')
+_TML_ITALIC_RE      = re.compile(r'(?<!_)_(?!\s)(.+?)(?<!\s)_(?!_)')
 _TML_BOLD_ITALIC_RE = re.compile(r'__(.+?)__')
+_TML_HEADING_RE     = re.compile(r'^(---+)(\++)\s*(.*)', re.MULTILINE)
+
+# Macros whose output is user-specific — topics containing these must not be cached
+_USER_SPECIFIC_MACROS = re.compile(
+    r'%(?:WIKIUSERNAME|WIKINAME|USERNAME|USERINFO|GROUPS|ISMEMBER)(?:[{%]|%)'
+)
+
+
+def _has_user_macros(content: str) -> bool:
+    """Return True if content contains user-specific macros that must not be cached."""
+    return bool(_USER_SPECIFIC_MACROS.search(content))
 
 
 def _tml_to_markdown(text: str) -> str:
     """
-    Convert Foswiki TML inline formatting to Markdown equivalents.
+    Convert Foswiki TML formatting to Markdown equivalents.
 
-    TML bold:        *text*   → **text**
-    TML italic:      _text_   → *text*
-    TML bold+italic: __text__ → ***text***
+    TML headings:    ---++ Heading  → ## Heading
+    TML bold:        *text*         → **text**
+    TML italic:      _text_         → *text*
+    TML bold+italic: __text__       → ***text***
     """
+    # Headings: ---+++ Title → ### Title  (count + signs for depth)
+    def _heading(m: re.Match) -> str:
+        depth = len(m.group(2))  # number of + signs
+        title = m.group(3).strip()
+        return '#' * depth + ' ' + title
+    text = _TML_HEADING_RE.sub(_heading, text)
     # Bold+italic first (before bold/italic individually)
     text = _TML_BOLD_ITALIC_RE.sub(r'***\1***', text)
     # Bold: *text* → **text**  (but not inside already-converted **text**)
