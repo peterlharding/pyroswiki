@@ -27,8 +27,16 @@ from webui.templating import templates
 router = APIRouter(tags=["webui-topics"])
 
 
+# ── Foswiki-compatible /view/{web}/{topic} redirect ───────────────────────────
+
+@router.get("/view/{web_name}/{topic_name}")
+async def view_redirect(web_name: str, topic_name: str):
+    return RedirectResponse(url=f"/webs/{web_name}/topics/{topic_name}", status_code=301)
+
+
 def _pipeline(db) -> RenderPipeline:
-    return RenderPipeline(base_url=get_settings().base_url, db=db)
+    s = get_settings()
+    return RenderPipeline(base_url=s.base_url, pub_base_url=s.pub_base_url, db=db)
 
 
 # -----------------------------------------------------------------------------
