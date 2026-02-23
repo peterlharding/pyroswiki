@@ -152,6 +152,9 @@ class RenderPipeline:
         # ── 3. Bracket link conversion  [[target][label]] → Markdown link ──
         text = self._expand_bracket_links(text, web, ctx)
 
+        # ── 3b. TML → Markdown normalisation ──────────────────────────────
+        text = _tml_to_markdown(text)
+
         # ── 4. Markdown → HTML ─────────────────────────────────────────────
         html = self._render_markdown(text)
 
@@ -274,6 +277,34 @@ class RenderPipeline:
         return f"<pre>{html.escape(text)}</pre>"
 
     # -------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# TML → Markdown normalisation
+# Foswiki uses *bold* and _italic_ inline; Markdown needs **bold** and *italic*.
+# We only convert inline spans that are surrounded by word boundaries / spaces.
+# -----------------------------------------------------------------------------
+
+_TML_BOLD_RE   = re.compile(r'(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)')
+_TML_ITALIC_RE = re.compile(r'(?<!_)_(?!\s)(.+?)(?<!\s)_(?!_)')
+_TML_BOLD_ITALIC_RE = re.compile(r'__(.+?)__')
+
+
+def _tml_to_markdown(text: str) -> str:
+    """
+    Convert Foswiki TML inline formatting to Markdown equivalents.
+
+    TML bold:        *text*   → **text**
+    TML italic:      _text_   → *text*
+    TML bold+italic: __text__ → ***text***
+    """
+    # Bold+italic first (before bold/italic individually)
+    text = _TML_BOLD_ITALIC_RE.sub(r'***\1***', text)
+    # Bold: *text* → **text**  (but not inside already-converted **text**)
+    text = _TML_BOLD_RE.sub(r'**\1**', text)
+    # Italic: _text_ → *text*
+    text = _TML_ITALIC_RE.sub(r'*\1*', text)
+    return text
 
 
 # -----------------------------------------------------------------------------

@@ -26,6 +26,13 @@ def register(registry: MacroRegistry) -> None:
             return ctx.current_user.get("wiki_name") or ctx.current_user.get("username", "Guest")
         return "Guest"
 
+    @registry.register("WIKIUSERNAME")
+    def wikiusername_macro(params, ctx):
+        if ctx.current_user:
+            wiki = ctx.current_user.get("wiki_name") or ctx.current_user.get("username", "Guest")
+            return f"Main.{wiki}"
+        return "Main.WikiGuest"
+
     @registry.register("USERNAME")
     def username_macro(params, ctx):
         if ctx.current_user:
