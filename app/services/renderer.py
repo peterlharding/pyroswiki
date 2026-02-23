@@ -158,6 +158,9 @@ class RenderPipeline:
         # ── 4. Markdown → HTML ─────────────────────────────────────────────
         html = self._render_markdown(text)
 
+        # ── 4b. Inline bold/italic inside raw HTML blocks ──────────────────
+        html = _render_inline_in_html(html)
+
         # ── 5. WikiWord auto-linking (post-Markdown, on rendered HTML) ─────
         linker = WikiWordLinker(
             base_url=self.base_url,
@@ -326,6 +329,25 @@ def _tml_to_markdown(text: str) -> str:
 
 
 # -----------------------------------------------------------------------------
+# Process inline bold/italic inside raw HTML blocks that mistune skips
+# -----------------------------------------------------------------------------
+
+_INLINE_BOLD_RE   = re.compile(r'\*\*(.+?)\*\*')
+_INLINE_ITALIC_RE = re.compile(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)')
+
+
+def _render_inline_in_html(html: str) -> str:
+    """
+    Convert **bold** and *italic* Markdown inside raw HTML blocks.
+    Mistune passes raw HTML through unchanged, so inline formatting
+    inside <div>, <center>, etc. needs a second pass.
+    """
+    html = _INLINE_BOLD_RE.sub(r'<strong>\1</strong>', html)
+    html = _INLINE_ITALIC_RE.sub(r'<em>\1</em>', html)
+    return html
+
+
+# -----------------------------------------------------------------------------
 
 _EXTERNAL_LINK_RE = re.compile(
     r'<a\s+([^>]*?)href=(["\'])(https?://[^"\'>]+)\2([^>]*)>',
@@ -358,21 +380,23 @@ def _add_external_link_targets(html: str) -> str:
 
 def _build_markdown_renderer():
     """
-    Build a mistune renderer with table, strikethrough, and footnotes support.
+    Build a mistune renderer with table, strikethrough, footnotes, and raw HTML support.
     Falls back to a simple lambda if mistune is not installed.
     """
     if not _HAS_MISTUNE:
         return lambda text: text
 
     if hasattr(mistune, "create_markdown"):
-        # mistune >= 3.x
+        # mistune >= 3.x — enable raw HTML passthrough
         return mistune.create_markdown(
             plugins=["table", "strikethrough", "footnotes", "task_lists"],
+            renderer=mistune.HTMLRenderer(escape=False),
         )
     else:
         # mistune 2.x
         return mistune.create_markdown(
             plugins=["table", "strikethrough", "footnotes"],
+            renderer=mistune.HTMLRenderer(escape=False),
         )
 
 
