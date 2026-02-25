@@ -2,8 +2,6 @@
 
 A Python reimplementation of the [Foswiki](https://foswiki.org/) enterprise wiki platform, built with a FastAPI backend and a Jinja2 web UI.
 
-Live instance: **https://pyroswiki.performiq.com**
-
 ---
 
 ## Overview
