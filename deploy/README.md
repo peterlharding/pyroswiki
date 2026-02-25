@@ -1,8 +1,11 @@
 # Pyroswiki — Server Deployment
 
-**Domain:** `pyroswiki.performiq.com`
-- Web UI: `https://pyroswiki.performiq.com` → `127.0.0.1:8221`
-- API:    `https://pyroswiki.performiq.com:8443` → `127.0.0.1:8621`
+Replace `wiki.example.com` throughout with your actual domain.
+
+| Service | External URL | Internal address |
+|---------|-------------|------------------|
+| Web UI | `https://wiki.example.com` | `127.0.0.1:8221` |
+| API | `https://wiki.example.com:8443` | `127.0.0.1:8621` |
 
 ---
 
@@ -43,9 +46,10 @@ sudo nano /opt/pyroswiki/.env
 Key values to set:
 - `DATABASE_URL` — PostgreSQL connection string with real password
 - `SECRET_KEY` — generate with: `python3 -c "import secrets; print(secrets.token_hex(64))"`
-- `BASE_URL=https://pyroswiki.performiq.com:8443`
-- `CORS_ORIGINS=["https://pyroswiki.performiq.com"]`
-- `ALLOW_REGISTRATION=false`
+- `BASE_URL=https://wiki.example.com:8443`
+- `WEB_BASE_URL=https://wiki.example.com`
+- `CORS_ORIGINS=["https://wiki.example.com"]`
+- `ALLOW_REGISTRATION=true` — leave enabled until the first admin user is created, then set to `false`
 
 ```bash
 sudo chown pyroswiki:pyroswiki /opt/pyroswiki/.env
@@ -63,12 +67,30 @@ sudo -u pyroswiki bash -c "
 
 ## 6. Bootstrap first admin user
 
-Register via the web UI first, then promote via psql:
+User registration is **enabled by default** (`ALLOW_REGISTRATION=true`). This allows the first user to self-register via the web UI.
+
+1. Start the services (step 7 below), then open the web UI and register your admin account.
+2. Promote that account to admin via psql:
 
 ```bash
 psql -h 127.0.0.1 -U pyroswiki -d pyroswiki \
   -c "UPDATE users SET is_admin = TRUE WHERE username = 'your-username';"
 ```
+
+3. Once your admin account is set up, **disable public registration** so no one else can self-register:
+
+```bash
+# In /opt/pyroswiki/.env
+ALLOW_REGISTRATION=false
+```
+
+Then restart the API service:
+
+```bash
+sudo systemctl restart pyroswiki-api
+```
+
+> After registration is disabled, only admins can create new user accounts via the **Admin → Users** page in the web UI.
 
 ## 7. Install systemd services
 
@@ -85,18 +107,18 @@ sudo systemctl status pyroswiki-api pyroswiki-web
 
 ```bash
 sudo cp /opt/pyroswiki/deploy/nginx-py-foswiki.conf \
-    /etc/nginx/sites-available/pyroswiki.performiq.com
-sudo ln -s /etc/nginx/sites-available/pyroswiki.performiq.com \
+    /etc/nginx/sites-available/wiki.example.com
+sudo ln -s /etc/nginx/sites-available/wiki.example.com \
     /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
 > **SSL certificates** must already exist. If not, obtain them first:
 > ```bash
-> sudo certbot --nginx -d pyroswiki.performiq.com
+> sudo certbot --nginx -d wiki.example.com
 > ```
-> Then replace the `ssl_certificate` paths in the nginx config if certbot
-> didn't already update them.
+> Then update the `server_name` and `ssl_certificate` paths in the nginx config
+> to match your domain and certbot certificate paths.
 
 ## 9. Open firewall ports
 
