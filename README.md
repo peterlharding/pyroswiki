@@ -1,6 +1,6 @@
 # Pyroswiki
 
-A Python reimplementation of the [Foswiki](https://foswiki.org/) enterprise wiki platform, built with a FastAPI backend and a Jinja2 web UI.
+A Python (partial) reimplementation of the [Foswiki](https://foswiki.org/) enterprise wiki platform, built with a FastAPI backend and a Jinja2 web UI.
 
 ---
 
